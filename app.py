@@ -13,7 +13,6 @@ TELEGRAM_LINK = os.getenv("TELEGRAM_LINK", "https://t.me/your_link")
 
 INSTAGRAM_APP_ID = os.getenv("INSTAGRAM_APP_ID", "")
 INSTAGRAM_APP_SECRET = os.getenv("INSTAGRAM_APP_SECRET", "")
-REDIRECT_URI = os.getenv("request.base_url", "")
 
 GRAPH_VERSION = "v25.0"
 GRAPH_BASE = f"https://graph.facebook.com/{GRAPH_VERSION}"
@@ -41,6 +40,7 @@ def send_private_reply(comment_id: str, text: str):
         json=payload,
         timeout=30
     )
+
     print("META STATUS:", resp.status_code)
     print("META BODY:", resp.text)
     return resp
@@ -57,17 +57,18 @@ def callback():
     if not code:
         return "Callback OK, lekin code topilmadi.", 400
 
-    if not INSTAGRAM_APP_ID or not INSTAGRAM_APP_SECRET or not REDIRECT_URI:
-        return "INSTAGRAM_APP_ID / INSTAGRAM_APP_SECRET / REDIRECT_URI yo'q.", 500
+    if not INSTAGRAM_APP_ID or not INSTAGRAM_APP_SECRET:
+        return "INSTAGRAM_APP_ID yoki INSTAGRAM_APP_SECRET yo'q.", 500
 
-    # 1) code -> short-lived token
+    redirect_uri = request.base_url
+
     short_resp = requests.post(
         "https://api.instagram.com/oauth/access_token",
         data={
             "client_id": INSTAGRAM_APP_ID,
             "client_secret": INSTAGRAM_APP_SECRET,
             "grant_type": "authorization_code",
-            "redirect_uri": REDIRECT_URI,
+            "redirect_uri": redirect_uri,
             "code": code,
         },
         timeout=30,
@@ -85,7 +86,6 @@ def callback():
     if not short_token:
         return f"Short token topilmadi: {short_resp.text}", 400
 
-    # 2) short-lived -> long-lived token
     long_resp = requests.get(
         "https://graph.instagram.com/access_token",
         params={
@@ -100,10 +100,7 @@ def callback():
     print("LONG TOKEN BODY:", long_resp.text)
 
     if not long_resp.ok:
-        return (
-            "Short token olindi, lekin long-lived token olishda xato bo‘ldi. "
-            "Render Logs ni tekshiring."
-        ), 400
+        return "Long-lived token olishda xato bo‘ldi. Render Logs ni tekshiring.", 400
 
     long_data = long_resp.json()
     long_token = long_data.get("access_token")
@@ -112,11 +109,7 @@ def callback():
     print("LONG_LIVED_INSTAGRAM_ACCESS_TOKEN =", long_token)
     print("====================================")
 
-    return (
-        "Token olindi. Endi Render → Logs ga kiring va "
-        "LONG_LIVED_INSTAGRAM_ACCESS_TOKEN ni nusxa olib, "
-        "Environment ichidagi INSTAGRAM_ACCESS_TOKEN ga joylang."
-    ), 200
+    return "Token olindi. Endi Render Logs ga kiring.", 200
 
 
 @app.get("/webhook")
