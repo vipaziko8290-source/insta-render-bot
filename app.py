@@ -84,6 +84,21 @@ def receive_webhook():
     return jsonify({"ok": True}), 200
 
 
+@app.get("/deauthorize")
+@app.post("/deauthorize")
+def deauthorize():
+    return jsonify({"status": "ok"}), 200
+
+
+@app.get("/data-deletion")
+@app.post("/data-deletion")
+def data_deletion():
+    return jsonify({
+        "status": "received",
+        "message": "Data deletion request endpoint is working."
+    }), 200
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "10000"))
     app.run(host="0.0.0.0", port=port)
