@@ -13,7 +13,7 @@ TELEGRAM_LINK = os.getenv("TELEGRAM_LINK", "https://t.me/your_link")
 
 INSTAGRAM_APP_ID = os.getenv("INSTAGRAM_APP_ID", "")
 INSTAGRAM_APP_SECRET = os.getenv("INSTAGRAM_APP_SECRET", "")
-REDIRECT_URI = os.getenv("REDIRECT_URI", "")
+REDIRECT_URI = os.getenv("request.base_url", "")
 
 GRAPH_VERSION = "v25.0"
 GRAPH_BASE = f"https://graph.facebook.com/{GRAPH_VERSION}"
