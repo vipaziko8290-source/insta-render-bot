@@ -11,6 +11,10 @@ INSTAGRAM_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN", "")
 TRIGGER_WORD = os.getenv("TRIGGER_WORD", "prompt").lower()
 TELEGRAM_LINK = os.getenv("TELEGRAM_LINK", "https://t.me/your_link")
 
+INSTAGRAM_APP_ID = os.getenv("INSTAGRAM_APP_ID", "")
+INSTAGRAM_APP_SECRET = os.getenv("INSTAGRAM_APP_SECRET", "")
+REDIRECT_URI = os.getenv("REDIRECT_URI", "")
+
 GRAPH_VERSION = "v25.0"
 GRAPH_BASE = f"https://graph.facebook.com/{GRAPH_VERSION}"
 
@@ -49,8 +53,70 @@ def home():
 
 @app.get("/callback")
 def callback():
-    full_url = request.url
-    return f"Callback OK<br><br>{full_url}", 200
+    code = request.args.get("code")
+    if not code:
+        return "Callback OK, lekin code topilmadi.", 400
+
+    if not INSTAGRAM_APP_ID or not INSTAGRAM_APP_SECRET or not REDIRECT_URI:
+        return "INSTAGRAM_APP_ID / INSTAGRAM_APP_SECRET / REDIRECT_URI yo'q.", 500
+
+    # 1) code -> short-lived token
+    short_resp = requests.post(
+        "https://api.instagram.com/oauth/access_token",
+        data={
+            "client_id": INSTAGRAM_APP_ID,
+            "client_secret": INSTAGRAM_APP_SECRET,
+            "grant_type": "authorization_code",
+            "redirect_uri": REDIRECT_URI,
+            "code": code,
+        },
+        timeout=30,
+    )
+
+    print("SHORT TOKEN STATUS:", short_resp.status_code)
+    print("SHORT TOKEN BODY:", short_resp.text)
+
+    if not short_resp.ok:
+        return f"Short token olishda xato: {short_resp.text}", 400
+
+    short_data = short_resp.json()
+    short_token = short_data.get("access_token")
+
+    if not short_token:
+        return f"Short token topilmadi: {short_resp.text}", 400
+
+    # 2) short-lived -> long-lived token
+    long_resp = requests.get(
+        "https://graph.instagram.com/access_token",
+        params={
+            "grant_type": "ig_exchange_token",
+            "client_secret": INSTAGRAM_APP_SECRET,
+            "access_token": short_token,
+        },
+        timeout=30,
+    )
+
+    print("LONG TOKEN STATUS:", long_resp.status_code)
+    print("LONG TOKEN BODY:", long_resp.text)
+
+    if not long_resp.ok:
+        return (
+            "Short token olindi, lekin long-lived token olishda xato bo‘ldi. "
+            "Render Logs ni tekshiring."
+        ), 400
+
+    long_data = long_resp.json()
+    long_token = long_data.get("access_token")
+
+    print("========== COPY THIS TOKEN ==========")
+    print("LONG_LIVED_INSTAGRAM_ACCESS_TOKEN =", long_token)
+    print("====================================")
+
+    return (
+        "Token olindi. Endi Render → Logs ga kiring va "
+        "LONG_LIVED_INSTAGRAM_ACCESS_TOKEN ni nusxa olib, "
+        "Environment ichidagi INSTAGRAM_ACCESS_TOKEN ga joylang."
+    ), 200
 
 
 @app.get("/webhook")
