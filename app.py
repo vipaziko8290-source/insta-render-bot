@@ -158,6 +158,25 @@ def data_deletion():
     }), 200
 
 
+@app.get("/privacy")
+def privacy():
+    return """
+    <h1>Privacy Policy</h1>
+    <p>This app is used to process Instagram comments and send automated replies.</p>
+    <p>We do not sell personal data.</p>
+    <p>Data is only used for functionality requested by the user.</p>
+    """, 200
+
+
+@app.get("/terms")
+def terms():
+    return """
+    <h1>Terms of Service</h1>
+    <p>This app provides automated Instagram comment and message functionality.</p>
+    <p>By using this app, you agree to use it lawfully and according to platform rules.</p>
+    """, 200
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "10000"))
     app.run(host="0.0.0.0", port=port)
