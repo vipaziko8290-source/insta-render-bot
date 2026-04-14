@@ -100,16 +100,17 @@ def callback():
     print("LONG TOKEN BODY:", long_resp.text)
 
     if not long_resp.ok:
-        return "Long-lived token olishda xato bo‘ldi. Render Logs ni tekshiring.", 400
+        return f"Long-lived token olishda xato: {long_resp.text}", 400
 
     long_data = long_resp.json()
     long_token = long_data.get("access_token")
 
-    print("========== COPY THIS TOKEN ==========")
-    print("LONG_LIVED_INSTAGRAM_ACCESS_TOKEN =", long_token)
-    print("====================================")
-
-    return "Token olindi. Endi Render Logs ga kiring.", 200
+    return f"""
+    <h1>Token tayyor</h1>
+    <p>Pastdagi tokenni aynan o'zini ko'chirib, Render Environment ichidagi <b>INSTAGRAM_ACCESS_TOKEN</b> ga qo'ying.</p>
+    <textarea style="width:100%;height:180px;">{long_token}</textarea>
+    <p>Keyin bu sahifani va loglarni hech kimga ko'rsatmang. Test tugagach tokenni yangilang.</p>
+    """, 200
 
 
 @app.get("/webhook")
